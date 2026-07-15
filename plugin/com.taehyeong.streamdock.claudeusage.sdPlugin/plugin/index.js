@@ -185,10 +185,10 @@ function drawFace(ctx, cx, cy, e, frame, color, hi) {
 }
 
 function drawSleeping(ctx, cx, t, color, square) {
-  const cy = 70, S = 25;
+  const cy = 70, HW = 28, HH = 20;   // 가로로 긴 직사각형
   ctx.fillStyle = color || "#5A5A5A";
-  if (square) { roundRect(ctx, cx - S, cy - S, S * 2, S * 2, 7); ctx.fill(); }
-  else { ctx.beginPath(); ctx.arc(cx, cy, S + 3, 0, Math.PI * 2); ctx.fill(); }
+  if (square) { roundRect(ctx, cx - HW, cy - HH, HW * 2, HH * 2, 7); ctx.fill(); }
+  else { ctx.beginPath(); ctx.arc(cx, cy, HW, 0, Math.PI * 2); ctx.fill(); }
   ctx.strokeStyle = "#1A1A1A"; ctx.lineWidth = 2.5; ctx.lineCap = "round";
   ctx.beginPath(); ctx.arc(cx - 9, cy - 3, 4, 0.1 * Math.PI, 0.9 * Math.PI); ctx.stroke();
   ctx.beginPath(); ctx.arc(cx + 9, cy - 3, 4, 0.1 * Math.PI, 0.9 * Math.PI); ctx.stroke();
@@ -207,13 +207,13 @@ function drawClaudeChar(ctx, cx, energy, t, frame, label) {
   const e = energy / 100;
   const bob = Math.sin(t * (2 + e * 4)) * (1.5 + e * 5);
   const cy = 58 + bob + (1 - e) * 8;
-  const S = 25;
+  const HW = 28, HH = 20;   // 가로로 긴 직사각형 얼굴
   const coral = e > 0.5 ? "#D77757" : e > 0.2 ? "#C08466" : "#8B7268";
 
   // 다리 4개 (몸통 아래) — 걷기(에너지↑), 지치면 벌어짐
-  const legTop = cy + S, legLen = 13 - (1 - e) * 4;
+  const legTop = cy + HH, legLen = 13 - (1 - e) * 4;
   ctx.strokeStyle = coral; ctx.lineWidth = 5; ctx.lineCap = "round";
-  const xs = [-15, -6, 6, 15];
+  const xs = [-18, -7, 7, 18];
   for (let i = 0; i < 4; i++) {
     const walk = e > 0.2 ? Math.sin(t * (3 + e * 3) + i * Math.PI / 2) * (1 + e * 4) : 0;
     const splay = e < 0.2 ? (i < 2 ? -7 : 7) : 0;
@@ -223,9 +223,9 @@ function drawClaudeChar(ctx, cx, energy, t, frame, label) {
     ctx.stroke();
   }
 
-  // 네모 몸통(얼굴)
+  // 가로로 긴 직사각형 얼굴
   ctx.fillStyle = coral;
-  roundRect(ctx, cx - S, cy - S, S * 2, S * 2, 7); ctx.fill();
+  roundRect(ctx, cx - HW, cy - HH, HW * 2, HH * 2, 7); ctx.fill();
   drawFace(ctx, cx, cy, e, frame, "#2A1A14", "#fff");
 
   ctx.fillStyle = "#8B949E"; ctx.font = "11px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
@@ -242,7 +242,7 @@ function drawCodexChar(ctx, cx, energy, t, frame, label) {
   const lav = e > 0.5 ? "#A78BFA" : e > 0.2 ? "#9285C0" : "#6E6690";
   const scr = e > 0.2 ? "#20306E" : "#181828";
   const glow = e > 0.5 ? "#7BB4FF" : e > 0.2 ? "#5B7FC0" : "#4A5580";
-  const HW = 30, HH = 24;
+  const HW = 33, HH = 22;   // 가로로 긴 TV
 
   // 안테나 (에너지↑ 쫑긋)
   ctx.strokeStyle = lav; ctx.lineWidth = 3; ctx.lineCap = "round";
