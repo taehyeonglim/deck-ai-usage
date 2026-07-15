@@ -572,83 +572,103 @@ git commit -m "feat: usage.json 라이터(build_payload + 원자적 write) + pyt
 
 ### Task 5: agent-monitor 폴딩 (NERV worktree)
 
-라이브 데이터가 플러그인 폴더로 흐르게 NERV `token_status_writer.py`에 env-gated write를 얹는다. **NERV 불변식 준수: worktree에서만.**
+라이브 데이터가 플러그인 폴더로 흐르게 NERV `token_status_writer.py`에 **fail-safe write**를 얹는다. 데몬은 이 스크립트를 `subprocess.run`으로 30초마다 호출하므로(monitor_daemon.py:390) **launchd 편집·데몬 재시작 불필요** — 스크립트가 main 클론에 반영되면 다음 주기에 자동 적용. **NERV 불변식 준수: worktree에서 편집·커밋, main 병합은 사용자 승인 게이트.**
 
 **Files:**
-- Modify: `~/NERV/Agents/Lab Director/project-dashboard/token_status_writer.py` (token_status_data.js write 직후)
+- Modify: `Agents/Lab Director/project-dashboard/token_status_writer.py` — `collect_and_write`(line 47)에 헬퍼 호출 1줄 + 신규 헬퍼 `_write_streamdock_usage` 1개.
 
 **Interfaces:**
-- Consumes: `build_payload` 로직(Task 4와 동일 규칙 — 인라인 복제, tests/test_usage_payload.py가 행위 계약).
+- Consumes: `collector.collect()` 결과 `token_data`(`.claude.{pct_5h,pct_7d,reset_5h,reset_7d,pct_source,pct_stale_min,available}`). 변환 규칙은 Task 4 `build_payload`와 동일 — `tests/test_usage_payload.py`가 행위 계약.
 
-- [ ] **Step 1: NERV worktree 생성**
+- [ ] **Step 1: NERV worktree 생성 (컨트롤러 수행)**
 
-Run:
-```bash
-cd ~/NERV && git worktree add ~/NERV-wt/streamdock-usage -b streamdock-usage
-```
+Run: `cd ~/NERV && git worktree add ~/NERV-wt/streamdock-usage -b streamdock-usage`
 Expected: worktree 생성, 브랜치 `streamdock-usage`.
 
-- [ ] **Step 2: write 지점 확인**
+- [ ] **Step 2: `_write_streamdock_usage` 헬퍼 추가**
 
-Run: `grep -n "token_status_data.js\|def \|\.write(\|json.dump" "~/NERV-wt/streamdock-usage/Agents/Lab Director/project-dashboard/token_status_writer.py" | head -30`
-Expected: `token_status_data.js`를 쓰는 함수/라인 식별 (claude dict가 in-scope인 지점).
-
-- [ ] **Step 3: env-gated 인라인 write 추가**
-
-token_status_data.js를 쓰는 코드 **직후**, claude dict가 접근 가능한 스코프에 삽입 (변수명은 Step 2 실측에 맞춤):
+worktree의 `Agents/Lab Director/project-dashboard/token_status_writer.py`, `write_token_jsonp` 정의 **아래**에 삽입 (`os`는 이미 상단 import; json/tempfile/time은 헬퍼 내부 지역 import로 상단 footprint 0):
 
 ```python
-# --- StreamDock 덱 게이지 연동 (env 설정 시에만, 실패해도 본 기능 무영향) ---
-_sd_dest = os.environ.get("STREAMDOCK_USAGE_JSON")
-if _sd_dest:
+def _write_streamdock_usage(token_data: dict) -> None:
+    """StreamDock(MONSTAR DECK) 덱 게이지용 usage.json — 플러그인이 설치돼 있을
+    때만 쓰고, 어떤 실패도 대시보드 토큰 갱신에 전파하지 않는다(fail-safe)."""
+    import json
+    import tempfile
+    import time
+    dest = os.environ.get('STREAMDOCK_USAGE_JSON') or os.path.expanduser(
+        '~/Library/Application Support/HotSpot/StreamDock/plugins/'
+        'com.taehyeong.streamdock.claudeusage.sdPlugin/plugin/data/usage.json')
     try:
-        import tempfile as _tf
-        def _sd_rem(p):
-            try: return max(0, min(100, round(100 - float(p))))
-            except (TypeError, ValueError): return None
-        _c = claude_data  # ← Step 2에서 확인한 실제 claude dict 변수명으로 교체
-        _sd_payload = {
-            "rem_5h": _sd_rem(_c.get("pct_5h")), "rem_7d": _sd_rem(_c.get("pct_7d")),
-            "reset_5h": (_c.get("reset_5h") or "").replace(" KST", "").strip(),
-            "reset_7d": (_c.get("reset_7d") or "").replace(" KST", "").strip(),
-            "stale": bool(_c.get("pct_source") == "cache" and (_c.get("pct_stale_min") or 0) >= 15),
-            "available": bool(_c.get("available", False)), "ts": int(time.time()),
+        parent = os.path.dirname(dest)
+        if not os.path.isdir(parent):
+            return  # 플러그인 미설치 → no-op (fail-safe)
+        claude = (token_data or {}).get('claude', {}) or {}
+
+        def _rem(p):
+            try:
+                return max(0, min(100, round(100 - float(p))))
+            except (TypeError, ValueError):
+                return None
+
+        payload = {
+            'rem_5h': _rem(claude.get('pct_5h')),
+            'rem_7d': _rem(claude.get('pct_7d')),
+            'reset_5h': (claude.get('reset_5h') or '').replace(' KST', '').strip(),
+            'reset_7d': (claude.get('reset_7d') or '').replace(' KST', '').strip(),
+            'stale': bool(claude.get('pct_source') == 'cache'
+                          and (claude.get('pct_stale_min') or 0) >= 15),
+            'available': bool(claude.get('available', False)),
+            'ts': int(time.time()),
         }
-        os.makedirs(os.path.dirname(_sd_dest), exist_ok=True)
-        _fd, _tmp = _tf.mkstemp(dir=os.path.dirname(_sd_dest), suffix=".tmp")
-        with os.fdopen(_fd, "w", encoding="utf-8") as _f:
-            json.dump(_sd_payload, _f, ensure_ascii=False)
-        os.replace(_tmp, _sd_dest)
-    except Exception as _e:
-        print(f"[streamdock] usage.json write skipped: {_e}")
+        fd, tmp = tempfile.mkstemp(dir=parent, suffix='.tmp')
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            json.dump(payload, f, ensure_ascii=False)
+        os.replace(tmp, dest)
+    except Exception:
+        pass  # 덱 연동 실패가 대시보드 토큰 갱신을 절대 깨지 않게
 ```
 
-> `os`, `json`, `time` import가 파일 상단에 없으면 추가.
+- [ ] **Step 3: `collect_and_write`에서 헬퍼 호출**
 
-- [ ] **Step 4: launchd에 env 주입**
+`collect_and_write`의 마지막 `write_token_jsonp(collector.collect(), output_path)` 줄을 아래로 교체 (collect()를 한 번만 호출하도록 변수로 잡고 헬퍼 추가):
 
-`~/NERV/Agents/Lab Director/agent-monitor`의 launchd plist(`com.nerv.agent-monitor`)에 `EnvironmentVariables.STREAMDOCK_USAGE_JSON` = 플러그인 data 경로 추가:
+```python
+    token_data = collector.collect()
+    write_token_jsonp(token_data, output_path)
+    _write_streamdock_usage(token_data)
 ```
-$HOME/Library/Application Support/HotSpot/StreamDock/plugins/com.taehyeong.streamdock.claudeusage.sdPlugin/plugin/data/usage.json
+
+- [ ] **Step 4: 단독 실행 검증 (프로덕션·데몬 무변경 라이브 증명)**
+
+worktree 스크립트를 손으로 1회 실행 — 실제 `~/.claude` 사용량을 읽어 usage.json을 갱신한다(main 데몬/launchd 건드리지 않음):
+```bash
+cd "$HOME/NERV-wt/streamdock-usage/Agents/Lab Director/project-dashboard"
+python3 token_status_writer.py --output /tmp/tsd_streamdock_test.js
+cat "$HOME/Library/Application Support/HotSpot/StreamDock/plugins/com.taehyeong.streamdock.claudeusage.sdPlugin/plugin/data/usage.json"
 ```
-plist 편집 → `launchctl unload && load` → `plutil -lint` 통과 확인.
+Expected: usage.json이 **실제 남은%**(placeholder 76/95가 아닌 현재 값) + `ts`가 현재 유닉스초. `/tmp/tsd_streamdock_test.js`도 정상 생성(기존 JSONP 기능 무회귀).
 
-- [ ] **Step 5: 라이브 검증**
+- [ ] **Step 5: 실물 관찰 (🖐️)**
 
-데몬 1주기(≤30초) 대기 후:
-Run: `cat "$HOME/Library/Application Support/HotSpot/StreamDock/plugins/com.taehyeong.streamdock.claudeusage.sdPlugin/plugin/data/usage.json"`
-Expected: 실제 남은% 반영 + `ts`가 현재시각. 이후 30초마다 `ts` 갱신.
-그리고 덱 버튼이 30초 내 실제 사용량으로 자동 갱신되는지 **실물 관찰**.
+Step 4 실행 직후 덱 버튼이 **실제 사용량**으로 바뀌는지 관찰. (이 시점엔 1회성 — main 데몬은 아직 옛 코드라 usage.json이 곧 stale해짐. 연속 갱신은 Step 7 병합 후.)
 
-- [ ] **Step 6: NERV 커밋 (worktree)**
+- [ ] **Step 6: NERV 커밋 (worktree 브랜치)**
 
 ```bash
 cd ~/NERV-wt/streamdock-usage
-git add "Agents/Lab Director/project-dashboard/token_status_writer.py" ~/Library/LaunchAgents/com.nerv.agent-monitor.plist 2>/dev/null || \
-  git add "Agents/Lab Director/project-dashboard/token_status_writer.py"
-git commit -m "feat(agent-monitor): StreamDock 덱 게이지용 usage.json env-gated write"
+git add "Agents/Lab Director/project-dashboard/token_status_writer.py"
+git commit -m "feat(agent-monitor): StreamDock 덱 게이지용 usage.json fail-safe write"
 ```
-> plist가 repo 밖이면 별도 관리. NERV pre-commit 훅(Stage 0 worktree 가드) 통과 확인.
+NERV pre-commit 훅(Stage 0 worktree 가드 등) 통과 확인.
+
+- [ ] **Step 7: main 병합 — 사용자 승인 게이트 (프로덕션 변경)**
+
+라이브 데몬은 `~/NERV`(main 클론)에서 스크립트를 실행하므로, **30초 연속 자동 갱신은 이 브랜치를 NERV main에 병합해야** 발효된다. 이는 프로덕션 변경이므로 **diff를 사용자에게 제시하고 명시 승인 후** 병합:
+```bash
+cd ~/NERV && git merge --ff-only streamdock-usage    # 또는 사용자 선호 방식
+```
+병합 후 ≤30초 내 데몬이 새 코드를 실행 → usage.json `ts` 자동 갱신 → 덱 연속 반영. 미병합 선택 시: 필요할 때 Step 4 수동 실행으로 갱신(자동화는 보류).
 
 ---
 
