@@ -109,6 +109,17 @@
       "UserTitleEnabled": false,
       "SupportedInMultiActions": false,
       "PropertyInspectorPath": "propertyInspector/index.html"
+    },
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.character",
+      "Icon": "images/icon",
+      "Name": "Claude 캐릭터",
+      "Tooltip": "Claude 남은 사용량에 반응하는 캐릭터 애니메이션",
+      "States": [{ "Image": "images/defaultImage", "TitleAlignment": "bottom" }],
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
     }
   ],
   "SDKVersion": 1,

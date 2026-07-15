@@ -9,5 +9,6 @@
   "com.taehyeong.streamdock.claudeusage.claude7dReset": "Claude 주간 리셋",
   "com.taehyeong.streamdock.claudeusage.codex5hReset": "Codex 5h 리셋",
   "com.taehyeong.streamdock.claudeusage.codex7dReset": "Codex 주간 리셋",
-  "com.taehyeong.streamdock.claudeusage.geminiReset": "Gemini 리셋"
+  "com.taehyeong.streamdock.claudeusage.geminiReset": "Gemini 리셋",
+  "com.taehyeong.streamdock.claudeusage.character": "Claude 캐릭터"
 }
