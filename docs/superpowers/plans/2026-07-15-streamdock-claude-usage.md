@@ -709,6 +709,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 node_modules/
+.superpowers/
 ```
 
 - [ ] **Step 4: README 작성** — 설치/재설치/persistence/폴백(Appendix B) 요약
