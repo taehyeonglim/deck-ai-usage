@@ -120,6 +120,17 @@
       "UserTitleEnabled": false,
       "SupportedInMultiActions": false,
       "PropertyInspectorPath": "propertyInspector/index.html"
+    },
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.codexCharacter",
+      "Icon": "images/icon",
+      "Name": "Codex 캐릭터",
+      "Tooltip": "Codex 남은 사용량에 반응하는 TV 캐릭터 애니메이션",
+      "States": [{ "Image": "images/defaultImage", "TitleAlignment": "bottom" }],
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
     }
   ],
   "SDKVersion": 1,

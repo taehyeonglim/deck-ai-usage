@@ -2,7 +2,7 @@ let ws = null;
 // context -> metric descriptor (which provider/window this key shows)
 const contexts = new Map();
 
-// 액션 UUID -> 지표. mode "gauge"=남은% 링, "reset"=리셋 시각.
+// 액션 UUID -> 지표. mode "gauge"=남은% 링, "reset"=리셋 시각, "anim"=캐릭터.
 const METRICS = {
   "com.taehyeong.streamdock.claudeusage.claude5h": { key: "claude_5h", label: "Claude 5h", accent: "#D77757", mode: "gauge" },
   "com.taehyeong.streamdock.claudeusage.claude7d": { key: "claude_7d", label: "Claude 주간", accent: "#D77757", mode: "gauge" },
@@ -14,7 +14,8 @@ const METRICS = {
   "com.taehyeong.streamdock.claudeusage.codex5hReset":  { key: "codex_5h",  label: "Codex 5h",  accent: "#10A37F", mode: "reset" },
   "com.taehyeong.streamdock.claudeusage.codex7dReset":  { key: "codex_7d",  label: "Codex 주간", accent: "#10A37F", mode: "reset" },
   "com.taehyeong.streamdock.claudeusage.geminiReset":   { key: "gemini",    label: "Gemini",    accent: "#4285F4", mode: "reset" },
-  "com.taehyeong.streamdock.claudeusage.character":     { key: "claude_7d", label: "Claude",     accent: "#D77757", mode: "anim" },
+  "com.taehyeong.streamdock.claudeusage.character":      { label: "Claude", provider: "claude", mode: "anim" },
+  "com.taehyeong.streamdock.claudeusage.codexCharacter": { label: "Codex",  provider: "codex",  mode: "anim" },
 };
 
 // 덱이 이 함수를 호출한다 (Elgato SDK 진입점)
@@ -53,20 +54,16 @@ function drawSingleGauge(ctx, metric, u, nowMs) {
   ctx.clearRect(0, 0, W, W);
   ctx.fillStyle = "#0D1117"; ctx.fillRect(0, 0, W, W);
 
-  // 상단 라벨 (프로바이더 액센트)
   ctx.textAlign = "center"; ctx.textBaseline = "top";
   ctx.font = "bold 14px sans-serif";
   ctx.fillStyle = metric.accent;
   ctx.fillText(metric.label, cx, 10);
-  // 얇은 액센트 바
   ctx.fillRect(cx - 20, 28, 40, 2);
 
-  // 링 트랙
   ctx.lineWidth = 12; ctx.lineCap = "round";
   ctx.strokeStyle = "#21262D";
   ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
 
-  // 링 채움 — 12시 시작 시계방향, 남은 비율
   if (avail) {
     const start = -Math.PI / 2;
     const end = start + (Math.PI * 2) * (rem / 100);
@@ -76,18 +73,15 @@ function drawSingleGauge(ctx, metric, u, nowMs) {
     ctx.globalAlpha = 1;
   }
 
-  // 중앙 남은 %
   ctx.fillStyle = stale ? "#6E7681" : "#E6EDF3";
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   ctx.font = "bold 33px sans-serif";
   ctx.fillText(avail ? rem + "%" : "—", cx, cy);
 
-  // 하단 리셋 시각
   ctx.font = "10px sans-serif"; ctx.fillStyle = "#8B949E";
   ctx.textBaseline = "bottom";
   ctx.fillText(data && data.reset ? "↺ " + data.reset : "", cx, W - 8);
 
-  // stale 점
   if (stale) { ctx.fillStyle = "#D29922"; ctx.beginPath(); ctx.arc(134, 12, 5, 0, Math.PI * 2); ctx.fill(); }
 
   return ctx.canvas.toDataURL("image/png");
@@ -105,14 +99,12 @@ function drawReset(ctx, metric, u, nowMs) {
   ctx.clearRect(0, 0, W, W);
   ctx.fillStyle = "#0D1117"; ctx.fillRect(0, 0, W, W);
 
-  // 상단 라벨 (프로바이더 액센트) + 액센트 바
   ctx.textAlign = "center"; ctx.textBaseline = "top";
   ctx.font = "bold 14px sans-serif";
   ctx.fillStyle = metric.accent;
   ctx.fillText(metric.label, W / 2, 10);
   ctx.fillRect(W / 2 - 20, 28, 40, 2);
 
-  // ↺ 리셋 아이콘
   ctx.font = "24px sans-serif";
   ctx.fillStyle = stale ? "#6E7681" : "#8B949E";
   ctx.textBaseline = "middle";
@@ -127,10 +119,10 @@ function drawReset(ctx, metric, u, nowMs) {
   } else {
     const parts = reset.split(" ");
     if (parts.length >= 2) {
-      ctx.font = "bold 23px sans-serif"; ctx.fillText(parts[0], W / 2, 88);   // 날짜
-      ctx.font = "bold 27px sans-serif"; ctx.fillText(parts[1], W / 2, 118);  // 시각
+      ctx.font = "bold 23px sans-serif"; ctx.fillText(parts[0], W / 2, 88);
+      ctx.font = "bold 27px sans-serif"; ctx.fillText(parts[1], W / 2, 118);
     } else {
-      ctx.font = "bold 32px sans-serif"; ctx.fillText(parts[0], W / 2, 100);  // 시각만
+      ctx.font = "bold 32px sans-serif"; ctx.fillText(parts[0], W / 2, 100);
     }
   }
 
@@ -143,102 +135,161 @@ function drawReset(ctx, metric, u, nowMs) {
 let lastUsage = null;   // 30초 fetch 캐시 (애니메이션이 재fetch 없이 재사용)
 let animFrame = 0;
 
-// Claude 남은 에너지 = 5h/7d 중 더 빡빡한 쪽 (둘 다 없으면 null)
-function claudeEnergy(u) {
+const PROVIDER_KEYS = { claude: ["claude_5h", "claude_7d"], codex: ["codex_5h", "codex_7d"] };
+
+// 남은 에너지 = 해당 프로바이더 창들 중 더 빡빡한 쪽 (없으면 null)
+function energyFor(u, keys) {
   if (!u) return null;
   const vals = [];
-  for (const k of ["claude_5h", "claude_7d"]) {
+  for (const k of keys) {
     const m = u[k];
     if (m && m.available !== false && m.rem != null) vals.push(m.rem);
   }
   return vals.length ? Math.min.apply(null, vals) : null;
 }
 
-function drawSleeping(ctx, cx, t) {
-  const cy = 74;
-  ctx.fillStyle = "#5A5A5A";
-  ctx.beginPath(); ctx.arc(cx, cy, 30, 0, Math.PI * 2); ctx.fill();
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+// 얼굴 (눈+입) — solid 위에 dark, TV 화면 위엔 glow
+function drawFace(ctx, cx, cy, e, frame, color, hi) {
+  const eyeY = cy - 4, dx = 9;
+  ctx.fillStyle = color; ctx.strokeStyle = color;
+  if (e < 0.2) {                                   // 지친 눈 (\ /)
+    ctx.lineWidth = 2.5; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(cx - dx - 4, eyeY - 1); ctx.lineTo(cx - dx + 3, eyeY + 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + dx - 3, eyeY + 2); ctx.lineTo(cx + dx + 4, eyeY - 1); ctx.stroke();
+  } else {                                         // 초롱초롱 (가끔 깜빡)
+    const blink = (frame % 45) < 2 ? 0.12 : 1;
+    ctx.beginPath(); ctx.ellipse(cx - dx, eyeY, 3.2, 4.2 * blink, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx + dx, eyeY, 3.2, 4.2 * blink, 0, 0, Math.PI * 2); ctx.fill();
+    if (blink === 1 && hi) {
+      ctx.fillStyle = hi;
+      ctx.beginPath(); ctx.arc(cx - dx + 1, eyeY - 1.5, 1, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + dx + 1, eyeY - 1.5, 1, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = color;
+    }
+  }
+  ctx.lineWidth = 2.5; ctx.lineCap = "round"; ctx.beginPath();
+  if (e > 0.5) ctx.arc(cx, cy + 6, 6, 0.15 * Math.PI, 0.85 * Math.PI);           // 활짝
+  else if (e > 0.2) { ctx.moveTo(cx - 5, cy + 9); ctx.lineTo(cx + 5, cy + 9); }  // 무표정
+  else ctx.arc(cx, cy + 14, 6, 1.15 * Math.PI, 1.85 * Math.PI);                  // 시무룩
+  ctx.stroke();
+}
+
+function drawSleeping(ctx, cx, t, color, square) {
+  const cy = 70, S = 25;
+  ctx.fillStyle = color || "#5A5A5A";
+  if (square) { roundRect(ctx, cx - S, cy - S, S * 2, S * 2, 7); ctx.fill(); }
+  else { ctx.beginPath(); ctx.arc(cx, cy, S + 3, 0, Math.PI * 2); ctx.fill(); }
   ctx.strokeStyle = "#1A1A1A"; ctx.lineWidth = 2.5; ctx.lineCap = "round";
-  ctx.beginPath(); ctx.arc(cx - 10, cy - 3, 4, 0.1 * Math.PI, 0.9 * Math.PI); ctx.stroke();
-  ctx.beginPath(); ctx.arc(cx + 10, cy - 3, 4, 0.1 * Math.PI, 0.9 * Math.PI); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx - 9, cy - 3, 4, 0.1 * Math.PI, 0.9 * Math.PI); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx + 9, cy - 3, 4, 0.1 * Math.PI, 0.9 * Math.PI); ctx.stroke();
   const zp = Math.floor(t) % 3;
   ctx.fillStyle = "#8B949E"; ctx.textAlign = "left";
-  ctx.font = "bold 14px sans-serif"; ctx.fillText("z", cx + 22, cy - 18 - zp * 4);
-  ctx.font = "bold 11px sans-serif"; ctx.fillText("z", cx + 31, cy - 28 - zp * 3);
+  ctx.font = "bold 14px sans-serif"; ctx.fillText("z", cx + 22, cy - 14 - zp * 4);
+  ctx.font = "bold 11px sans-serif"; ctx.fillText("z", cx + 31, cy - 24 - zp * 3);
   ctx.fillStyle = "#8B949E"; ctx.font = "11px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
   ctx.fillText("연동 대기", cx, 138);
 }
 
-// 사용량 반응 캐릭터 한 프레임 — 여유↑ 신나게 통통, 부족↓ 지쳐 늘어짐
-function drawCharacter(ctx, metric, u, frame) {
-  const W = 144, cx = 72;
-  const t = frame * 0.1;
-  ctx.clearRect(0, 0, W, W);
-  ctx.fillStyle = "#0D1117"; ctx.fillRect(0, 0, W, W);
-
-  const energy = claudeEnergy(u);
-  if (energy == null) { drawSleeping(ctx, cx, t); return ctx.canvas.toDataURL("image/png"); }
-
-  const e = energy / 100;                          // 0..1
-  const bounce = Math.sin(t * (2 + e * 4)) * (2 + e * 10);
-  const cy = 70 + bounce + (1 - e) * 12;           // 지치면 아래로 처짐
-  const spin = t * (0.3 + e * 1.6);                // 스파클 회전 (에너지↑ 빠르게)
-  const R = 30;
+// Claude: 네모 얼굴 + 다리 4개
+function drawClaudeChar(ctx, cx, energy, t, frame, label) {
+  const W = 144;
+  if (energy == null) { drawSleeping(ctx, cx, t, "#5A5A5A", true); return; }
+  const e = energy / 100;
+  const bob = Math.sin(t * (2 + e * 4)) * (1.5 + e * 5);
+  const cy = 58 + bob + (1 - e) * 8;
+  const S = 25;
   const coral = e > 0.5 ? "#D77757" : e > 0.2 ? "#C08466" : "#8B7268";
 
-  // 스파클 광선 (회전)
-  ctx.save(); ctx.translate(cx, cy); ctx.rotate(spin);
-  ctx.strokeStyle = coral; ctx.lineCap = "round"; ctx.lineWidth = 4;
-  ctx.globalAlpha = 0.5 + e * 0.4;
-  for (let i = 0; i < 8; i++) {
-    const a = (i / 8) * Math.PI * 2;
-    const len = R + 12 + Math.sin(t * 3 + i) * (2 + e * 4);
+  // 다리 4개 (몸통 아래) — 걷기(에너지↑), 지치면 벌어짐
+  const legTop = cy + S, legLen = 13 - (1 - e) * 4;
+  ctx.strokeStyle = coral; ctx.lineWidth = 5; ctx.lineCap = "round";
+  const xs = [-15, -6, 6, 15];
+  for (let i = 0; i < 4; i++) {
+    const walk = e > 0.2 ? Math.sin(t * (3 + e * 3) + i * Math.PI / 2) * (1 + e * 4) : 0;
+    const splay = e < 0.2 ? (i < 2 ? -7 : 7) : 0;
     ctx.beginPath();
-    ctx.moveTo(Math.cos(a) * (R + 2), Math.sin(a) * (R + 2));
-    ctx.lineTo(Math.cos(a) * len, Math.sin(a) * len);
+    ctx.moveTo(cx + xs[i], legTop - 2);
+    ctx.lineTo(cx + xs[i] + splay, legTop + legLen + walk);
     ctx.stroke();
   }
-  ctx.restore(); ctx.globalAlpha = 1;
 
-  // 몸통
+  // 네모 몸통(얼굴)
   ctx.fillStyle = coral;
-  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
+  roundRect(ctx, cx - S, cy - S, S * 2, S * 2, 7); ctx.fill();
+  drawFace(ctx, cx, cy, e, frame, "#2A1A14", "#fff");
 
-  // 눈
-  const eyeY = cy - 4, dx = 10;
-  if (e < 0.2) {                                    // 지친 눈 (^ ^ 늘어짐)
-    ctx.strokeStyle = "#1A1A1A"; ctx.lineWidth = 2.5; ctx.lineCap = "round";
-    ctx.beginPath(); ctx.moveTo(cx - dx - 4, eyeY - 1); ctx.lineTo(cx - dx + 3, eyeY + 2); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(cx + dx - 3, eyeY + 2); ctx.lineTo(cx + dx + 4, eyeY - 1); ctx.stroke();
-  } else {                                          // 초롱초롱 (가끔 깜빡)
-    const blink = (frame % 45) < 2 ? 0.12 : 1;
-    ctx.fillStyle = "#1A1A1A";
-    ctx.beginPath(); ctx.ellipse(cx - dx, eyeY, 3.5, 4.5 * blink, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(cx + dx, eyeY, 3.5, 4.5 * blink, 0, 0, Math.PI * 2); ctx.fill();
-    if (blink === 1) {
-      ctx.fillStyle = "#fff";
-      ctx.beginPath(); ctx.arc(cx - dx + 1.2, eyeY - 1.5, 1, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(cx + dx + 1.2, eyeY - 1.5, 1, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#8B949E"; ctx.font = "11px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+  ctx.fillText((label || "Claude") + " " + energy + "%", cx, W - 6);
+}
+
+// Codex: TV처럼 생긴 네모 (연보라 프레임 + 파랑 화면 + 안테나)
+function drawCodexChar(ctx, cx, energy, t, frame, label) {
+  const W = 144;
+  if (energy == null) { drawSleeping(ctx, cx, t, "#6B6690", true); return; }
+  const e = energy / 100;
+  const bob = Math.sin(t * (2 + e * 3)) * (1 + e * 4);
+  const cy = 64 + bob + (1 - e) * 8;
+  const lav = e > 0.5 ? "#A78BFA" : e > 0.2 ? "#9285C0" : "#6E6690";
+  const scr = e > 0.2 ? "#20306E" : "#181828";
+  const glow = e > 0.5 ? "#7BB4FF" : e > 0.2 ? "#5B7FC0" : "#4A5580";
+  const HW = 30, HH = 24;
+
+  // 안테나 (에너지↑ 쫑긋)
+  ctx.strokeStyle = lav; ctx.lineWidth = 3; ctx.lineCap = "round";
+  const ang = 0.55 + e * 0.3 + Math.sin(t * 4) * 0.05 * e;
+  for (const s of [-1, 1]) {
+    const ex = cx + s * (6 + Math.cos(ang) * 15), ey = cy - HH - Math.sin(ang) * 15;
+    ctx.beginPath(); ctx.moveTo(cx + s * 6, cy - HH + 2); ctx.lineTo(ex, ey); ctx.stroke();
+    ctx.fillStyle = lav; ctx.beginPath(); ctx.arc(ex, ey, 3, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // TV 프레임 + 화면
+  ctx.fillStyle = lav; roundRect(ctx, cx - HW, cy - HH, HW * 2, HH * 2, 7); ctx.fill();
+  ctx.fillStyle = scr; roundRect(ctx, cx - HW + 5, cy - HH + 5, HW * 2 - 10, HH * 2 - 10, 4); ctx.fill();
+
+  // 스캔라인 + 정전기(지칠수록)
+  ctx.strokeStyle = "rgba(255,255,255,0.05)"; ctx.lineWidth = 1;
+  for (let y = cy - HH + 8; y < cy + HH - 6; y += 4) {
+    ctx.beginPath(); ctx.moveTo(cx - HW + 6, y); ctx.lineTo(cx + HW - 6, y); ctx.stroke();
+  }
+  if (e < 0.2) {
+    ctx.fillStyle = "rgba(200,210,255,0.18)";
+    for (let i = 0; i < 18; i++) {
+      const gx = cx - HW + 7 + Math.random() * (HW * 2 - 14);
+      const gy = cy - HH + 8 + Math.random() * (HH * 2 - 16);
+      ctx.fillRect(gx, gy, 2, 1);
     }
   }
 
-  // 입
-  ctx.strokeStyle = "#1A1A1A"; ctx.lineWidth = 2.5; ctx.lineCap = "round"; ctx.beginPath();
-  if (e > 0.5) ctx.arc(cx, cy + 5, 7, 0.15 * Math.PI, 0.85 * Math.PI);          // 활짝
-  else if (e > 0.2) { ctx.moveTo(cx - 5, cy + 9); ctx.lineTo(cx + 5, cy + 9); } // 무표정
-  else ctx.arc(cx, cy + 15, 7, 1.15 * Math.PI, 1.85 * Math.PI);                 // 시무룩
-  ctx.stroke();
+  // 화면 속 얼굴 (발광)
+  drawFace(ctx, cx, cy, e, frame, glow, null);
 
-  if (e < 0.2) {                                    // 지치면 땀방울
-    ctx.fillStyle = "#58A6FF";
-    const sy = cy - 16 + (Math.sin(t * 2) + 1) * 3;
-    ctx.beginPath(); ctx.arc(cx + R - 5, sy, 3, 0, Math.PI * 2); ctx.fill();
-  }
+  // 발
+  ctx.strokeStyle = lav; ctx.lineWidth = 4; ctx.lineCap = "round";
+  for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(cx + s * 16, cy + HH); ctx.lineTo(cx + s * 16, cy + HH + 7); ctx.stroke(); }
 
-  // 라벨
   ctx.fillStyle = "#8B949E"; ctx.font = "11px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
-  ctx.fillText("Claude " + energy + "%", cx, W - 6);
+  ctx.fillText((label || "Codex") + " " + energy + "%", cx, W - 6);
+}
 
+// 캐릭터 한 프레임 (provider로 아트 분기)
+function drawCharacter(ctx, metric, u, frame) {
+  const W = 144, cx = 72, t = frame * 0.1;
+  ctx.clearRect(0, 0, W, W);
+  ctx.fillStyle = "#0D1117"; ctx.fillRect(0, 0, W, W);
+  const energy = energyFor(u, PROVIDER_KEYS[metric.provider] || []);
+  if (metric.provider === "codex") drawCodexChar(ctx, cx, energy, t, frame, metric.label);
+  else drawClaudeChar(ctx, cx, energy, t, frame, metric.label);
   return ctx.canvas.toDataURL("image/png");
 }
 
