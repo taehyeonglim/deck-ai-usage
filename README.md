@@ -1,9 +1,17 @@
 # streamdock-claude-usage
-MONSTAR DECK(Stream Dock)에 Claude Code 남은 사용량을 실시간 게이지로.
+MONSTAR DECK(Stream Dock)에 AI 사용량(Claude / Codex / Gemini)을 실시간 게이지로.
+
+## 액션 5개 (Category: AI Usage)
+각 버튼이 한 지표 전담 — 풀사이즈 링 + 중앙 남은% + 라벨 + 리셋시각:
+- **Claude 5h** / **Claude 주간** (7일)
+- **Codex 5h** / **Codex 주간** (7일)
+- **Gemini** (단일 지표)
+
+링 색은 남은%(초록>50 / 주황≥20 / 빨강<20), 프로바이더는 라벨·액센트로 구분.
 
 ## 설치
     python3 scaffold_assets.py && bash install.sh
-MONSTAR DECK에서 "Claude Usage" 액션을 키에 배치.
+MONSTAR DECK에서 원하는 액션(Claude 5h 등)을 키에 배치.
 
 ## 데이터 연동
 NERV agent-monitor 데몬이 `token_status_writer.py`(30초 주기)에서 usage.json을
