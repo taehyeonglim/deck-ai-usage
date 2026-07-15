@@ -1,1 +1,8 @@
-{ "rem_5h": null, "rem_7d": null, "reset_5h": "", "reset_7d": "", "stale": true, "available": false, "ts": 0 }
+{
+  "claude_5h": { "rem": null, "reset": "", "stale": true, "available": false },
+  "claude_7d": { "rem": null, "reset": "", "stale": true, "available": false },
+  "codex_5h":  { "rem": null, "reset": "", "stale": true, "available": false },
+  "codex_7d":  { "rem": null, "reset": "", "stale": true, "available": false },
+  "gemini":    { "rem": null, "reset": "", "stale": true, "available": false },
+  "ts": 0
+}

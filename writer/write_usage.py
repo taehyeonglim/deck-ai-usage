@@ -4,18 +4,18 @@ import json, os, sys, time, tempfile
 sys.path.insert(0, os.path.dirname(__file__))
 from usage_payload import build_payload
 
-def _load_claude(src_js):
+def _load_token_data(src_js):
     with open(src_js, "r", encoding="utf-8") as f:
         raw = f.read().strip()
     if raw.startswith("window.__tokenData ="):
         raw = raw[len("window.__tokenData ="):].strip()
     if raw.endswith(";"):
         raw = raw[:-1]
-    return json.loads(raw).get("claude", {})
+    return json.loads(raw)
 
 def write_usage(src_js, dest_json, now_ts=None):
     now_ts = int(now_ts if now_ts is not None else time.time())
-    payload = build_payload(_load_claude(src_js), now_ts)
+    payload = build_payload(_load_token_data(src_js), now_ts)
     os.makedirs(os.path.dirname(dest_json), exist_ok=True)
     fd, tmp = tempfile.mkstemp(dir=os.path.dirname(dest_json), suffix=".tmp")
     with os.fdopen(fd, "w", encoding="utf-8") as f:

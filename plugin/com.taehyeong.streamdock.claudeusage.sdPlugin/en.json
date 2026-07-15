@@ -1,1 +1,8 @@
-{ "Name": "Claude Usage", "com.taehyeong.streamdock.claudeusage.gauge": "Claude Usage" }
+{
+  "Name": "AI Usage",
+  "com.taehyeong.streamdock.claudeusage.claude5h": "Claude 5h",
+  "com.taehyeong.streamdock.claudeusage.claude7d": "Claude Weekly",
+  "com.taehyeong.streamdock.claudeusage.codex5h": "Codex 5h",
+  "com.taehyeong.streamdock.claudeusage.codex7d": "Codex Weekly",
+  "com.taehyeong.streamdock.claudeusage.gemini": "Gemini"
+}
