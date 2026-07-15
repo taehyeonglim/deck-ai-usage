@@ -1,0 +1,25 @@
+{
+  "Actions": [
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.gauge",
+      "Icon": "images/icon",
+      "Name": "Claude Usage",
+      "Tooltip": "Claude Code 남은 사용량 (주간 링 + 5h)",
+      "States": [{ "Image": "images/defaultImage", "TitleAlignment": "bottom" }],
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false
+    }
+  ],
+  "SDKVersion": 1,
+  "CodePath": "plugin/index.html",
+  "Name": "Claude Usage",
+  "Icon": "images/cate",
+  "Category": "Claude Usage",
+  "CategoryIcon": "images/cate",
+  "Description": "Displays remaining Claude Code usage as a live gauge.",
+  "Author": "taehyeong",
+  "Version": "0.1.0",
+  "OS": [{ "Platform": "mac", "MinimumVersion": "10.11" }],
+  "Software": { "MinimumVersion": "2.9" }
+}
