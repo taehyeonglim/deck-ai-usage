@@ -54,6 +54,61 @@
       "UserTitleEnabled": false,
       "SupportedInMultiActions": false,
       "PropertyInspectorPath": "propertyInspector/index.html"
+    },
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.claude5hReset",
+      "Icon": "images/icon",
+      "Name": "Claude 5h 리셋",
+      "Tooltip": "Claude Code 5시간 세션 리셋 시각",
+      "States": [{ "Image": "images/defaultImage", "TitleAlignment": "bottom" }],
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
+    },
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.claude7dReset",
+      "Icon": "images/icon",
+      "Name": "Claude 주간 리셋",
+      "Tooltip": "Claude Code 주간(7일) 리셋 시각",
+      "States": [{ "Image": "images/defaultImage", "TitleAlignment": "bottom" }],
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
+    },
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.codex5hReset",
+      "Icon": "images/icon",
+      "Name": "Codex 5h 리셋",
+      "Tooltip": "Codex 5시간 세션 리셋 시각",
+      "States": [{ "Image": "images/defaultImage", "TitleAlignment": "bottom" }],
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
+    },
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.codex7dReset",
+      "Icon": "images/icon",
+      "Name": "Codex 주간 리셋",
+      "Tooltip": "Codex 주간(7일) 리셋 시각",
+      "States": [{ "Image": "images/defaultImage", "TitleAlignment": "bottom" }],
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
+    },
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.geminiReset",
+      "Icon": "images/icon",
+      "Name": "Gemini 리셋",
+      "Tooltip": "Gemini 리셋 시각",
+      "States": [{ "Image": "images/defaultImage", "TitleAlignment": "bottom" }],
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
     }
   ],
   "SDKVersion": 1,

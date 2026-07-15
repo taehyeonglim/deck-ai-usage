@@ -4,5 +4,10 @@
   "com.taehyeong.streamdock.claudeusage.claude7d": "Claude 주간",
   "com.taehyeong.streamdock.claudeusage.codex5h": "Codex 5h",
   "com.taehyeong.streamdock.claudeusage.codex7d": "Codex 주간",
-  "com.taehyeong.streamdock.claudeusage.gemini": "Gemini"
+  "com.taehyeong.streamdock.claudeusage.gemini": "Gemini",
+  "com.taehyeong.streamdock.claudeusage.claude5hReset": "Claude 5h 리셋",
+  "com.taehyeong.streamdock.claudeusage.claude7dReset": "Claude 주간 리셋",
+  "com.taehyeong.streamdock.claudeusage.codex5hReset": "Codex 5h 리셋",
+  "com.taehyeong.streamdock.claudeusage.codex7dReset": "Codex 주간 리셋",
+  "com.taehyeong.streamdock.claudeusage.geminiReset": "Gemini 리셋"
 }

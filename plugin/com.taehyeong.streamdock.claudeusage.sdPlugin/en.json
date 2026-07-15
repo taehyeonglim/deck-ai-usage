@@ -4,5 +4,10 @@
   "com.taehyeong.streamdock.claudeusage.claude7d": "Claude Weekly",
   "com.taehyeong.streamdock.claudeusage.codex5h": "Codex 5h",
   "com.taehyeong.streamdock.claudeusage.codex7d": "Codex Weekly",
-  "com.taehyeong.streamdock.claudeusage.gemini": "Gemini"
+  "com.taehyeong.streamdock.claudeusage.gemini": "Gemini",
+  "com.taehyeong.streamdock.claudeusage.claude5hReset": "Claude 5h Reset",
+  "com.taehyeong.streamdock.claudeusage.claude7dReset": "Claude Weekly Reset",
+  "com.taehyeong.streamdock.claudeusage.codex5hReset": "Codex 5h Reset",
+  "com.taehyeong.streamdock.claudeusage.codex7dReset": "Codex Weekly Reset",
+  "com.taehyeong.streamdock.claudeusage.geminiReset": "Gemini Reset"
 }

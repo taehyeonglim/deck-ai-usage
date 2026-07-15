@@ -2,13 +2,18 @@ let ws = null;
 // context -> metric descriptor (which provider/window this key shows)
 const contexts = new Map();
 
-// 액션 UUID -> 지표. 각 버튼이 한 지표를 전담한다.
+// 액션 UUID -> 지표. mode "gauge"=남은% 링, "reset"=리셋 시각.
 const METRICS = {
-  "com.taehyeong.streamdock.claudeusage.claude5h": { key: "claude_5h", label: "Claude 5h", accent: "#D77757" },
-  "com.taehyeong.streamdock.claudeusage.claude7d": { key: "claude_7d", label: "Claude 주간", accent: "#D77757" },
-  "com.taehyeong.streamdock.claudeusage.codex5h":  { key: "codex_5h",  label: "Codex 5h",  accent: "#10A37F" },
-  "com.taehyeong.streamdock.claudeusage.codex7d":  { key: "codex_7d",  label: "Codex 주간", accent: "#10A37F" },
-  "com.taehyeong.streamdock.claudeusage.gemini":   { key: "gemini",    label: "Gemini",    accent: "#4285F4" },
+  "com.taehyeong.streamdock.claudeusage.claude5h": { key: "claude_5h", label: "Claude 5h", accent: "#D77757", mode: "gauge" },
+  "com.taehyeong.streamdock.claudeusage.claude7d": { key: "claude_7d", label: "Claude 주간", accent: "#D77757", mode: "gauge" },
+  "com.taehyeong.streamdock.claudeusage.codex5h":  { key: "codex_5h",  label: "Codex 5h",  accent: "#10A37F", mode: "gauge" },
+  "com.taehyeong.streamdock.claudeusage.codex7d":  { key: "codex_7d",  label: "Codex 주간", accent: "#10A37F", mode: "gauge" },
+  "com.taehyeong.streamdock.claudeusage.gemini":   { key: "gemini",    label: "Gemini",    accent: "#4285F4", mode: "gauge" },
+  "com.taehyeong.streamdock.claudeusage.claude5hReset": { key: "claude_5h", label: "Claude 5h", accent: "#D77757", mode: "reset" },
+  "com.taehyeong.streamdock.claudeusage.claude7dReset": { key: "claude_7d", label: "Claude 주간", accent: "#D77757", mode: "reset" },
+  "com.taehyeong.streamdock.claudeusage.codex5hReset":  { key: "codex_5h",  label: "Codex 5h",  accent: "#10A37F", mode: "reset" },
+  "com.taehyeong.streamdock.claudeusage.codex7dReset":  { key: "codex_7d",  label: "Codex 주간", accent: "#10A37F", mode: "reset" },
+  "com.taehyeong.streamdock.claudeusage.geminiReset":   { key: "gemini",    label: "Gemini",    accent: "#4285F4", mode: "reset" },
 };
 
 // 덱이 이 함수를 호출한다 (Elgato SDK 진입점)
@@ -87,6 +92,52 @@ function drawSingleGauge(ctx, metric, u, nowMs) {
   return ctx.canvas.toDataURL("image/png");
 }
 
+// 리셋 시각 전용 (링 없이 ↺ + 날짜/시각)
+function drawReset(ctx, metric, u, nowMs) {
+  const W = 144;
+  const data = u ? u[metric.key] : null;
+  const fileTs = u ? u.ts : 0;
+  const avail = !!(data && data.available !== false);
+  const reset = data && data.reset ? String(data.reset) : "";
+  const stale = CU.isStaleData({ stale: !!(data && data.stale === true), ts: fileTs }, nowMs);
+
+  ctx.clearRect(0, 0, W, W);
+  ctx.fillStyle = "#0D1117"; ctx.fillRect(0, 0, W, W);
+
+  // 상단 라벨 (프로바이더 액센트) + 액센트 바
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  ctx.font = "bold 14px sans-serif";
+  ctx.fillStyle = metric.accent;
+  ctx.fillText(metric.label, W / 2, 10);
+  ctx.fillRect(W / 2 - 20, 28, 40, 2);
+
+  // ↺ 리셋 아이콘
+  ctx.font = "24px sans-serif";
+  ctx.fillStyle = stale ? "#6E7681" : "#8B949E";
+  ctx.textBaseline = "middle";
+  ctx.fillText("↺", W / 2, 52);
+
+  ctx.fillStyle = stale ? "#6E7681" : "#E6EDF3";
+  if (!avail || !reset) {
+    ctx.font = "bold 30px sans-serif";
+    ctx.fillText("—", W / 2, 92);
+    ctx.font = "10px sans-serif"; ctx.fillStyle = "#8B949E"; ctx.textBaseline = "bottom";
+    ctx.fillText(avail ? "리셋 정보 없음" : "연동 대기", W / 2, W - 8);
+  } else {
+    const parts = reset.split(" ");
+    if (parts.length >= 2) {
+      ctx.font = "bold 23px sans-serif"; ctx.fillText(parts[0], W / 2, 88);   // 날짜
+      ctx.font = "bold 27px sans-serif"; ctx.fillText(parts[1], W / 2, 118);  // 시각
+    } else {
+      ctx.font = "bold 32px sans-serif"; ctx.fillText(parts[0], W / 2, 100);  // 시각만
+    }
+  }
+
+  if (stale) { ctx.fillStyle = "#D29922"; ctx.beginPath(); ctx.arc(134, 12, 5, 0, Math.PI * 2); ctx.fill(); }
+
+  return ctx.canvas.toDataURL("image/png");
+}
+
 async function renderAll() {
   if (contexts.size === 0) return;
   let u = null;
@@ -94,7 +145,9 @@ async function renderAll() {
   const ctx = document.getElementById("c").getContext("2d");
   const now = Date.now();
   contexts.forEach((metric, context) => {
-    const img = drawSingleGauge(ctx, metric, u, now);
+    const img = metric.mode === "reset"
+      ? drawReset(ctx, metric, u, now)
+      : drawSingleGauge(ctx, metric, u, now);
     setImage(context, img);
   });
 }
