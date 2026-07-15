@@ -32,10 +32,10 @@
 │   ├── manifest.json                 # 액션 정의, CodePath
 │   ├── plugin/
 │   │   ├── index.html                # CodePath 진입 — helpers.js/index.js 로드
-│   │   ├── helpers.js                # 순수 함수(테스트 대상): remaining/ringColor/formatReset/isStaleData
+│   │   ├── helpers.js                # 순수 함수(테스트 대상): ringColor/isStaleData
 │   │   ├── index.js                  # SDK 연결 + 타이머 + fetch + 캔버스 렌더 + setImage
-│   │   └── timer.worker.js           # 30초 반복 (time/interval.js 패턴)
-│   ├── data/usage.json               # 라이터가 채움 (placeholder 동봉)
+│   │   ├── timer.worker.js           # 30초 반복 (time/interval.js 패턴)
+│   │   └── data/usage.json           # 라이터가 채움 — index.html과 같은 트리(상대 fetch 정합)
 │   ├── images/{cate,icon,defaultImage}.png
 │   ├── propertyInspector/index.html  # 최소 안내 (설정 없음)
 │   └── {en,ko}.json
@@ -61,12 +61,12 @@
 - Create: `plugin/com.taehyeong.streamdock.claudeusage.sdPlugin/manifest.json`
 - Create: `plugin/com.taehyeong.streamdock.claudeusage.sdPlugin/plugin/index.html`
 - Create: `plugin/com.taehyeong.streamdock.claudeusage.sdPlugin/plugin/index.js`
-- Create: `plugin/com.taehyeong.streamdock.claudeusage.sdPlugin/data/usage.json`
+- Create: `plugin/com.taehyeong.streamdock.claudeusage.sdPlugin/plugin/data/usage.json`
 - Create: `scaffold_assets.py`
 - Create: `install.sh`
 
 **Interfaces:**
-- Produces: 전역 `connectElgatoStreamDeckSocket(port, uuid, registerEvent, info)` (덱이 호출), `data/usage.json` 스키마 `{rem_5h,rem_7d,reset_5h,reset_7d,stale,available,ts}`.
+- Produces: 전역 `connectElgatoStreamDeckSocket(port, uuid, registerEvent, info)` (덱이 호출), `plugin/data/usage.json` 스키마 `{rem_5h,rem_7d,reset_5h,reset_7d,stale,available,ts}`.
 
 - [ ] **Step 1: 플레이스홀더 PNG 생성기 작성** — `scaffold_assets.py`
 
@@ -131,7 +131,7 @@ Expected: `assets written to …/images`, `images/{cate,icon,defaultImage}.png` 
 }
 ```
 
-- [ ] **Step 4: placeholder usage.json 작성** — `data/usage.json`
+- [ ] **Step 4: placeholder usage.json 작성** — `plugin/data/usage.json` (index.html과 같은 트리 → 상대 fetch `./data/usage.json` 정합)
 
 ```json
 { "rem_5h": 95, "rem_7d": 76, "reset_5h": "07/16 00:00", "reset_7d": "07/20 19:00", "stale": false, "available": true, "ts": 0 }
@@ -411,7 +411,7 @@ Expected: 버튼에 **주간 76% 초록 링 + 중앙 `76%` + 상단 `5h 95%`(파
 
 Run:
 ```bash
-F="$HOME/Library/Application Support/HotSpot/StreamDock/plugins/com.taehyeong.streamdock.claudeusage.sdPlugin/data/usage.json"
+F="$HOME/Library/Application Support/HotSpot/StreamDock/plugins/com.taehyeong.streamdock.claudeusage.sdPlugin/plugin/data/usage.json"
 echo '{"rem_5h":15,"rem_7d":12,"reset_5h":"07/16 00:00","reset_7d":"07/20 19:00","stale":true,"available":true,"ts":0}' > "$F"
 ```
 30초 대기(또는 키 재배치).
@@ -629,14 +629,14 @@ if _sd_dest:
 
 `~/NERV/Agents/Lab Director/agent-monitor`의 launchd plist(`com.nerv.agent-monitor`)에 `EnvironmentVariables.STREAMDOCK_USAGE_JSON` = 플러그인 data 경로 추가:
 ```
-$HOME/Library/Application Support/HotSpot/StreamDock/plugins/com.taehyeong.streamdock.claudeusage.sdPlugin/data/usage.json
+$HOME/Library/Application Support/HotSpot/StreamDock/plugins/com.taehyeong.streamdock.claudeusage.sdPlugin/plugin/data/usage.json
 ```
 plist 편집 → `launchctl unload && load` → `plutil -lint` 통과 확인.
 
 - [ ] **Step 5: 라이브 검증**
 
 데몬 1주기(≤30초) 대기 후:
-Run: `cat "$HOME/Library/Application Support/HotSpot/StreamDock/plugins/com.taehyeong.streamdock.claudeusage.sdPlugin/data/usage.json"`
+Run: `cat "$HOME/Library/Application Support/HotSpot/StreamDock/plugins/com.taehyeong.streamdock.claudeusage.sdPlugin/plugin/data/usage.json"`
 Expected: 실제 남은% 반영 + `ts`가 현재시각. 이후 30초마다 `ts` 갱신.
 그리고 덱 버튼이 30초 내 실제 사용량으로 자동 갱신되는지 **실물 관찰**.
 
