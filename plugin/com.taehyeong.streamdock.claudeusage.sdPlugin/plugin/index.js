@@ -21,20 +21,59 @@ async function fetchUsage() {
   return await res.json();
 }
 
-// Task 3에서 진짜 게이지로 교체. 지금은 rem_7d 숫자만 그려 fetch+setImage 증명.
-function renderTemp(u) {
-  const cv = document.getElementById("c"), ctx = cv.getContext("2d");
-  ctx.fillStyle = "#0D1117"; ctx.fillRect(0, 0, 144, 144);
-  ctx.fillStyle = "#3FB950"; ctx.font = "bold 48px sans-serif";
+function drawGauge(ctx, u, nowMs) {
+  const W = 144, cx = 72, cy = 78, r = 46;
+  ctx.clearRect(0, 0, W, W);
+  ctx.fillStyle = "#0D1117"; ctx.fillRect(0, 0, W, W);
+
+  const avail = u && u.available !== false;
+  const rem7 = u ? u.rem_7d : null;
+  const rem5 = u ? u.rem_5h : null;
+  const stale = CU.isStaleData(u, nowMs);
+
+  // 주간 링 (트랙)
+  ctx.lineWidth = 12; ctx.lineCap = "round";
+  ctx.strokeStyle = "#21262D";
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+
+  // 주간 링 (채움) — 12시 시작 시계방향
+  if (avail && rem7 != null) {
+    const start = -Math.PI / 2;
+    const end = start + (Math.PI * 2) * (rem7 / 100);
+    ctx.strokeStyle = CU.ringColor(rem7);
+    if (stale) ctx.globalAlpha = 0.35;
+    ctx.beginPath(); ctx.arc(cx, cy, r, start, end); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  // 중앙 주간 %
+  ctx.fillStyle = stale ? "#6E7681" : "#E6EDF3";
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  ctx.fillText((u && u.rem_7d != null ? u.rem_7d : "--") + "%", 72, 72);
-  return cv.toDataURL("image/png");
+  ctx.font = "bold 34px sans-serif";
+  ctx.fillText(avail && rem7 != null ? rem7 + "%" : "—", cx, cy - 2);
+  ctx.font = "11px sans-serif"; ctx.fillStyle = "#8B949E";
+  ctx.fillText("주간남음", cx, cy + 22);
+
+  // 상단 구석 5h
+  ctx.font = "bold 15px sans-serif"; ctx.textAlign = "left"; ctx.textBaseline = "top";
+  ctx.fillStyle = avail && rem5 != null ? "#58A6FF" : "#6E7681";
+  ctx.fillText("5h " + (avail && rem5 != null ? rem5 + "%" : "—"), 8, 8);
+
+  // stale 점
+  if (stale) { ctx.fillStyle = "#D29922"; ctx.beginPath(); ctx.arc(134, 12, 5, 0, Math.PI * 2); ctx.fill(); }
+
+  return ctx.canvas.toDataURL("image/png");
 }
 
 async function renderAll() {
   let u = null;
-  try { u = await fetchUsage(); console.log("[CU] fetch ok", u); }
-  catch (err) { console.log("[CU] fetch FAILED", String(err)); }  // R1 실패 시 여기 로그
-  const img = renderTemp(u);
+  try { u = await fetchUsage(); } catch (err) { console.log("[CU] fetch FAILED", String(err)); }
+  const ctx = document.getElementById("c").getContext("2d");
+  const img = drawGauge(ctx, u, Date.now());
   contexts.forEach((c) => setImage(c, img));
 }
+
+// 타이머 기동 (connectElgatoStreamDeckSocket 하단 또는 첫 willAppear에서 1회)
+const worker = new Worker("timer.worker.js");
+worker.onmessage = () => renderAll();
+worker.postMessage({ event: "start", delay: 30000 });
