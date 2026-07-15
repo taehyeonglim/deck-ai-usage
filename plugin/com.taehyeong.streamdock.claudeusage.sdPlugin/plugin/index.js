@@ -200,83 +200,97 @@ function drawSleeping(ctx, cx, t, color, square) {
   ctx.fillText("연동 대기", cx, 138);
 }
 
-// Claude: 네모 얼굴 + 다리 4개
+// Claude: 가로 직사각형 얼굴 + 다리 4개. 발은 땅에 고정, 몸통이 좌우 스웨이 (가재처럼)
 function drawClaudeChar(ctx, cx, energy, t, frame, label) {
   const W = 144;
   if (energy == null) { drawSleeping(ctx, cx, t, "#5A5A5A", true); return; }
   const e = energy / 100;
-  const bob = Math.sin(t * (2 + e * 4)) * (1.5 + e * 5);
-  const cy = 58 + bob + (1 - e) * 8;
-  const HW = 28, HH = 20;   // 가로로 긴 직사각형 얼굴
+  const HW = 28, HH = 20;
   const coral = e > 0.5 ? "#D77757" : e > 0.2 ? "#C08466" : "#8B7268";
 
-  // 다리 4개 (몸통 아래) — 걷기(에너지↑), 지치면 벌어짐
-  const legTop = cy + HH, legLen = 13 - (1 - e) * 4;
-  ctx.strokeStyle = coral; ctx.lineWidth = 5; ctx.lineCap = "round";
-  const xs = [-18, -7, 7, 18];
+  const sway = Math.sin(t * (1.5 + e * 3)) * (2 + e * 9);   // 좌우 스웨이 (에너지↑ 크게)
+  const bx = cx + sway;                                     // 몸통 X (좌우로만)
+  const cy = 60;                                            // 위아래 고정
+  const bodyBottom = cy + HH;
+  const groundY = bodyBottom + 17;
+  const feetX = [cx - 20, cx - 8, cx + 8, cx + 20];         // 발은 땅에 고정
+  const attach = [-16, -6, 6, 16];
+  const midY = bodyBottom + (groundY - bodyBottom) * 0.5;
+
+  // 다리 4개 — 부착점은 몸(스웨이) 따라 움직이고 발은 고정 → 다리 각도만 변함
+  ctx.strokeStyle = coral; ctx.lineWidth = 5; ctx.lineCap = "round"; ctx.lineJoin = "round";
   for (let i = 0; i < 4; i++) {
-    const walk = e > 0.2 ? Math.sin(t * (3 + e * 3) + i * Math.PI / 2) * (1 + e * 4) : 0;
-    const splay = e < 0.2 ? (i < 2 ? -7 : 7) : 0;
+    const kneeOut = attach[i] < 0 ? -4 : 4;
     ctx.beginPath();
-    ctx.moveTo(cx + xs[i], legTop - 2);
-    ctx.lineTo(cx + xs[i] + splay, legTop + legLen + walk);
+    ctx.moveTo(bx + attach[i], bodyBottom - 2);
+    ctx.lineTo(bx + attach[i] + kneeOut, midY);   // 무릎 (바깥으로 굽힘)
+    ctx.lineTo(feetX[i], groundY);                // 발 = 땅에 고정
     ctx.stroke();
   }
 
   // 가로로 긴 직사각형 얼굴
   ctx.fillStyle = coral;
-  roundRect(ctx, cx - HW, cy - HH, HW * 2, HH * 2, 7); ctx.fill();
-  drawFace(ctx, cx, cy, e, frame, "#2A1A14", "#fff");
+  roundRect(ctx, bx - HW, cy - HH, HW * 2, HH * 2, 7); ctx.fill();
+  drawFace(ctx, bx, cy, e, frame, "#2A1A14", "#fff");
 
   ctx.fillStyle = "#8B949E"; ctx.font = "11px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
   ctx.fillText((label || "Claude") + " " + energy + "%", cx, W - 6);
 }
 
-// Codex: TV처럼 생긴 네모 (연보라 프레임 + 파랑 화면 + 안테나)
+// Codex: 가로로 긴 TV (연보라 프레임 + 파랑 화면 + 안테나). 발 고정, 좌우 스웨이
 function drawCodexChar(ctx, cx, energy, t, frame, label) {
   const W = 144;
   if (energy == null) { drawSleeping(ctx, cx, t, "#6B6690", true); return; }
   const e = energy / 100;
-  const bob = Math.sin(t * (2 + e * 3)) * (1 + e * 4);
-  const cy = 64 + bob + (1 - e) * 8;
   const lav = e > 0.5 ? "#A78BFA" : e > 0.2 ? "#9285C0" : "#6E6690";
   const scr = e > 0.2 ? "#20306E" : "#181828";
   const glow = e > 0.5 ? "#7BB4FF" : e > 0.2 ? "#5B7FC0" : "#4A5580";
-  const HW = 33, HH = 22;   // 가로로 긴 TV
+  const HW = 33, HH = 22;
 
-  // 안테나 (에너지↑ 쫑긋)
+  const sway = Math.sin(t * (1.3 + e * 2.5)) * (1.5 + e * 6);   // 좌우 스웨이
+  const bx = cx + sway;
+  const cy = 60;                                                // 위아래 고정
+  const groundY = cy + HH + 10;
+  const feetX = [cx - 17, cx + 17];                            // 발은 땅에 고정
+
+  // 발 (몸 스웨이 → 다리 각도만 변함, 발끝은 땅에)
+  ctx.strokeStyle = lav; ctx.lineWidth = 4; ctx.lineCap = "round";
+  for (let i = 0; i < 2; i++) {
+    ctx.beginPath();
+    ctx.moveTo(bx + (i === 0 ? -17 : 17), cy + HH);
+    ctx.lineTo(feetX[i], groundY);
+    ctx.stroke();
+  }
+
+  // 안테나
   ctx.strokeStyle = lav; ctx.lineWidth = 3; ctx.lineCap = "round";
   const ang = 0.55 + e * 0.3 + Math.sin(t * 4) * 0.05 * e;
   for (const s of [-1, 1]) {
-    const ex = cx + s * (6 + Math.cos(ang) * 15), ey = cy - HH - Math.sin(ang) * 15;
-    ctx.beginPath(); ctx.moveTo(cx + s * 6, cy - HH + 2); ctx.lineTo(ex, ey); ctx.stroke();
+    const ex = bx + s * (6 + Math.cos(ang) * 15), ey = cy - HH - Math.sin(ang) * 15;
+    ctx.beginPath(); ctx.moveTo(bx + s * 6, cy - HH + 2); ctx.lineTo(ex, ey); ctx.stroke();
     ctx.fillStyle = lav; ctx.beginPath(); ctx.arc(ex, ey, 3, 0, Math.PI * 2); ctx.fill();
   }
 
   // TV 프레임 + 화면
-  ctx.fillStyle = lav; roundRect(ctx, cx - HW, cy - HH, HW * 2, HH * 2, 7); ctx.fill();
-  ctx.fillStyle = scr; roundRect(ctx, cx - HW + 5, cy - HH + 5, HW * 2 - 10, HH * 2 - 10, 4); ctx.fill();
+  ctx.fillStyle = lav; roundRect(ctx, bx - HW, cy - HH, HW * 2, HH * 2, 7); ctx.fill();
+  ctx.fillStyle = scr; roundRect(ctx, bx - HW + 5, cy - HH + 5, HW * 2 - 10, HH * 2 - 10, 4); ctx.fill();
 
   // 스캔라인 + 정전기(지칠수록)
   ctx.strokeStyle = "rgba(255,255,255,0.05)"; ctx.lineWidth = 1;
   for (let y = cy - HH + 8; y < cy + HH - 6; y += 4) {
-    ctx.beginPath(); ctx.moveTo(cx - HW + 6, y); ctx.lineTo(cx + HW - 6, y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(bx - HW + 6, y); ctx.lineTo(bx + HW - 6, y); ctx.stroke();
   }
   if (e < 0.2) {
     ctx.fillStyle = "rgba(200,210,255,0.18)";
     for (let i = 0; i < 18; i++) {
-      const gx = cx - HW + 7 + Math.random() * (HW * 2 - 14);
+      const gx = bx - HW + 7 + Math.random() * (HW * 2 - 14);
       const gy = cy - HH + 8 + Math.random() * (HH * 2 - 16);
       ctx.fillRect(gx, gy, 2, 1);
     }
   }
 
   // 화면 속 얼굴 (발광)
-  drawFace(ctx, cx, cy, e, frame, glow, null);
-
-  // 발
-  ctx.strokeStyle = lav; ctx.lineWidth = 4; ctx.lineCap = "round";
-  for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(cx + s * 16, cy + HH); ctx.lineTo(cx + s * 16, cy + HH + 7); ctx.stroke(); }
+  drawFace(ctx, bx, cy, e, frame, glow, null);
 
   ctx.fillStyle = "#8B949E"; ctx.font = "11px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
   ctx.fillText((label || "Codex") + " " + energy + "%", cx, W - 6);
