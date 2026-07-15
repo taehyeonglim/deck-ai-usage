@@ -599,6 +599,7 @@ def _write_streamdock_usage(token_data: dict) -> None:
     dest = os.environ.get('STREAMDOCK_USAGE_JSON') or os.path.expanduser(
         '~/Library/Application Support/HotSpot/StreamDock/plugins/'
         'com.taehyeong.streamdock.claudeusage.sdPlugin/plugin/data/usage.json')
+    tmp = None
     try:
         parent = os.path.dirname(dest)
         if not os.path.isdir(parent):
@@ -625,8 +626,13 @@ def _write_streamdock_usage(token_data: dict) -> None:
         with os.fdopen(fd, 'w', encoding='utf-8') as f:
             json.dump(payload, f, ensure_ascii=False)
         os.replace(tmp, dest)
+        tmp = None  # 성공적으로 rename됨 → 정리 대상 아님
     except Exception:
-        pass  # 덱 연동 실패가 대시보드 토큰 갱신을 절대 깨지 않게
+        if tmp:  # 실패 시 mkstemp 임시파일 누수 방지 (write_token_jsonp와 동일 규율)
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
 ```
 
 - [ ] **Step 3: `collect_and_write`에서 헬퍼 호출**
