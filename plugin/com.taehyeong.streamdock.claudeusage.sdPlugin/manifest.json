@@ -8,7 +8,8 @@
       "States": [{ "Image": "images/defaultImage", "TitleAlignment": "bottom" }],
       "Controllers": ["Keypad"],
       "UserTitleEnabled": false,
-      "SupportedInMultiActions": false
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
     }
   ],
   "SDKVersion": 1,
