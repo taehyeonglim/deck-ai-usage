@@ -61,3 +61,29 @@ def test_missing_provider_is_unavailable():
 def test_available_passthrough():
     t = {"claude": dict(TOKEN["claude"], available=False)}
     assert build_payload(t, 0)["claude_5h"]["available"] is False
+
+
+def test_codex_expired_window_corrects_to_100():
+    # 리셋 시각(epoch)이 지났는데 새 스냅샷이 없으면 새 창(사용 0)으로 보정
+    t = {"codex": dict(TOKEN["codex"], pct_7d=13,
+                       reset_7d="07/22 07:23 KST", reset_7d_at=1784672590)}
+    p = build_payload(t, 1784672591)  # now > resets_at
+    assert p["codex_7d"]["rem"] == 100 and p["codex_7d"]["reset"] == ""
+
+
+def test_codex_future_reset_untouched():
+    t = {"codex": dict(TOKEN["codex"], pct_7d=13,
+                       reset_7d="07/22 07:23 KST", reset_7d_at=1784672590)}
+    p = build_payload(t, 1784672589)  # now < resets_at
+    assert p["codex_7d"]["rem"] == 87 and p["codex_7d"]["reset"] == "07/22 07:23"
+
+
+def test_codex_missing_reset_at_untouched():
+    p = build_payload(TOKEN, 9999999999)  # reset_*_at 없음 → 보정 안 함
+    assert p["codex_5h"]["rem"] == 87
+
+
+def test_codex_unavailable_not_corrected():
+    t = {"codex": {"available": False, "reset_7d_at": 1}}
+    p = build_payload(t, 2)
+    assert p["codex_7d"]["rem"] is None

@@ -24,6 +24,21 @@ def _metric(prov, pct_key, reset_key, stale):
         "available": bool(prov.get("available", False)),
     }
 
+def _window_expired(prov, reset_at_key, now_ts):
+    try:
+        return float(prov.get(reset_at_key)) <= float(now_ts)
+    except (TypeError, ValueError):
+        return False
+
+def _codex_metric(codex, pct_key, reset_key, reset_at_key, now_ts):
+    # Codex 스냅샷은 CLI 실행 시에만 갱신됨. 예정된 리셋 시각이 지났다면
+    # 새 창이 열렸고 그 후 사용도 0이므로(사용하면 새 스냅샷이 생김)
+    # 남은 100%로 보정한다. 다음 리셋 시각은 미상이라 비운다.
+    m = _metric(codex, pct_key, reset_key, False)
+    if m["available"] and _window_expired(codex, reset_at_key, now_ts):
+        m["rem"], m["reset"] = 100, ""
+    return m
+
 def build_payload(token_data, now_ts):
     td = token_data or {}
     claude = td.get("claude") or {}
@@ -34,8 +49,8 @@ def build_payload(token_data, now_ts):
     return {
         "claude_5h": _metric(claude, "pct_5h", "reset_5h", claude_stale),
         "claude_7d": _metric(claude, "pct_7d", "reset_7d", claude_stale),
-        "codex_5h": _metric(codex, "pct_5h", "reset_5h", False),
-        "codex_7d": _metric(codex, "pct_7d", "reset_7d", False),
+        "codex_5h": _codex_metric(codex, "pct_5h", "reset_5h", "reset_5h_at", now_ts),
+        "codex_7d": _codex_metric(codex, "pct_7d", "reset_7d", "reset_7d_at", now_ts),
         "gemini": _metric(gemini, "pct_used", "reset", False),
         "ts": int(now_ts),
     }
