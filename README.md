@@ -1,29 +1,78 @@
-# streamdock-claude-usage
-MONSTAR DECK(Stream Dock)에 AI 사용량(Claude / Codex / Gemini)을 실시간 게이지로.
+# deck-ai-usage
 
-## 액션 5개 (Category: AI Usage)
-각 버튼이 한 지표 전담 — 풀사이즈 링 + 중앙 남은% + 라벨 + 리셋시각:
-- **Claude 5h** / **Claude 주간** (7일)
-- **Codex 5h** / **Codex 주간** (7일)
-- **Gemini** (단일 지표)
+Show your remaining **Claude / Codex / Gemini** usage as live gauges on a
+**Stream Dock (MONSTAR DECK)** — with experimental **Elgato Stream Deck** support.
 
-링 색은 남은%(초록>50 / 주황≥20 / 빨강<20), 프로바이더는 라벨·액센트로 구분.
+스트림덱 계열 장치에 AI 사용량(Claude / Codex / Gemini)을 실시간 게이지로 띄웁니다.
 
-## 설치
+## Actions (Category: AI Usage)
+
+12 actions, one metric per key — full-size ring + remaining % + label + reset time:
+
+| Gauge | Reset time | Character |
+|---|---|---|
+| Claude 5h / Claude Weekly | Claude 5h Reset / Weekly Reset | Claude character (usage-reactive animation) |
+| Codex 5h / Codex Weekly | Codex 5h Reset / Weekly Reset | Codex TV character |
+| Gemini | Gemini Reset | |
+
+Ring color reflects remaining %: green > 50, orange ≥ 20, red < 20.
+Providers are distinguished by label and accent color.
+
+## Install
+
+### Stream Dock (MONSTAR DECK) — verified
+
     python3 scaffold_assets.py && bash install.sh
-MONSTAR DECK에서 원하는 액션(Claude 5h 등)을 키에 배치.
 
-## 데이터 연동
-NERV agent-monitor 데몬이 `token_status_writer.py`(30초 주기)에서 usage.json을
-플러그인 폴더에 직접 기록한다. 기본 대상 경로가 이 플러그인 위치로 지정돼 있어
-**launchd 편집·env 설정 불필요(zero-config)**. 필요 시 `STREAMDOCK_USAGE_JSON`
-환경변수로 경로를 재정의할 수 있다(선택). 자동 30초 갱신은 이 연동이 NERV
-main에 병합돼 라이브 데몬이 새 코드를 실행할 때 발효되며, 미병합 상태에선
-`token_status_writer.py`를 수동 실행할 때만 갱신된다.
+Then place any action (e.g. "Claude 5h") on a key in the Stream Dock app.
 
-## 앱 재설치 후
-`.pkg` 재설치가 커스텀 플러그인을 지울 수 있음 → `bash install.sh` 재실행.
+### Elgato Stream Deck — experimental
 
-## 테스트
+    python3 scaffold_assets.py && bash install_elgato.sh
+
+The plugin code follows Elgato's plugin protocol (`connectElgatoStreamDeckSocket`,
+`willAppear` / `setImage`), and `manifest.elgato.json` provides the SDKVersion 2
+manifest Elgato requires. **Not yet verified on real Elgato hardware** — if the
+gauges stay blank, the likely culprit is `fetch()` of the local `usage.json`
+being blocked in Elgato's embedded browser. Bug reports welcome.
+
+## Data feed
+
+The plugin only reads one file: `plugin/data/usage.json` inside the installed
+plugin folder. **Any script that writes this schema works** — cron, launchd,
+your own monitor, anything:
+
+```json
+{
+  "claude_5h": { "rem": 73, "reset": "07-16 14:00", "stale": false, "available": true },
+  "claude_7d": { "rem": 41, "reset": "07-21 09:00", "stale": false, "available": true },
+  "codex_5h":  { "rem": null, "reset": "", "stale": true, "available": false },
+  "codex_7d":  { "rem": null, "reset": "", "stale": true, "available": false },
+  "gemini":    { "rem": 90, "reset": "07-17 00:00", "stale": false, "available": true },
+  "ts": 1752600000
+}
+```
+
+- `rem` — remaining percent (0–100), `null` if unknown
+- `reset` — human-readable reset time string (shown as-is)
+- `stale` / `available` — dim the gauge / show "—" respectively
+- `ts` — unix seconds of the last write; old `ts` also triggers the stale style
+
+A reference writer is included: `writer/write_usage.py` converts a
+`window.__tokenData = {...}` style JS status file into `usage.json`
+(paths configurable via `TOKEN_STATUS_JS` and `STREAMDOCK_USAGE_JSON`
+environment variables). Run it on a 30 s interval from any scheduler.
+
+## After reinstalling the deck app
+
+A `.pkg` reinstall may wipe custom plugins → re-run `bash install.sh`
+(or `install_elgato.sh`).
+
+## Tests
+
     node --test tests/helpers.test.js
     python3 -m pytest tests/ -q
+
+## License
+
+MIT

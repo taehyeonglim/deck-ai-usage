@@ -1,0 +1,238 @@
+{
+  "Actions": [
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.claude5h",
+      "Icon": "images/icon",
+      "Name": "Claude 5h",
+      "Tooltip": "Claude Code 5시간 세션 남은 사용량",
+      "States": [
+        {
+          "Image": "images/defaultImage",
+          "TitleAlignment": "bottom"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
+    },
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.claude7d",
+      "Icon": "images/icon",
+      "Name": "Claude 주간",
+      "Tooltip": "Claude Code 주간(7일) 남은 사용량",
+      "States": [
+        {
+          "Image": "images/defaultImage",
+          "TitleAlignment": "bottom"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
+    },
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.codex5h",
+      "Icon": "images/icon",
+      "Name": "Codex 5h",
+      "Tooltip": "Codex 5시간 세션 남은 사용량",
+      "States": [
+        {
+          "Image": "images/defaultImage",
+          "TitleAlignment": "bottom"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
+    },
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.codex7d",
+      "Icon": "images/icon",
+      "Name": "Codex 주간",
+      "Tooltip": "Codex 주간(7일) 남은 사용량",
+      "States": [
+        {
+          "Image": "images/defaultImage",
+          "TitleAlignment": "bottom"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
+    },
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.gemini",
+      "Icon": "images/icon",
+      "Name": "Gemini",
+      "Tooltip": "Gemini 남은 사용량",
+      "States": [
+        {
+          "Image": "images/defaultImage",
+          "TitleAlignment": "bottom"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
+    },
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.claude5hReset",
+      "Icon": "images/icon",
+      "Name": "Claude 5h 리셋",
+      "Tooltip": "Claude Code 5시간 세션 리셋 시각",
+      "States": [
+        {
+          "Image": "images/defaultImage",
+          "TitleAlignment": "bottom"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
+    },
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.claude7dReset",
+      "Icon": "images/icon",
+      "Name": "Claude 주간 리셋",
+      "Tooltip": "Claude Code 주간(7일) 리셋 시각",
+      "States": [
+        {
+          "Image": "images/defaultImage",
+          "TitleAlignment": "bottom"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
+    },
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.codex5hReset",
+      "Icon": "images/icon",
+      "Name": "Codex 5h 리셋",
+      "Tooltip": "Codex 5시간 세션 리셋 시각",
+      "States": [
+        {
+          "Image": "images/defaultImage",
+          "TitleAlignment": "bottom"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
+    },
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.codex7dReset",
+      "Icon": "images/icon",
+      "Name": "Codex 주간 리셋",
+      "Tooltip": "Codex 주간(7일) 리셋 시각",
+      "States": [
+        {
+          "Image": "images/defaultImage",
+          "TitleAlignment": "bottom"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
+    },
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.geminiReset",
+      "Icon": "images/icon",
+      "Name": "Gemini 리셋",
+      "Tooltip": "Gemini 리셋 시각",
+      "States": [
+        {
+          "Image": "images/defaultImage",
+          "TitleAlignment": "bottom"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
+    },
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.character",
+      "Icon": "images/icon",
+      "Name": "Claude 캐릭터",
+      "Tooltip": "Claude 남은 사용량에 반응하는 캐릭터 애니메이션",
+      "States": [
+        {
+          "Image": "images/defaultImage",
+          "TitleAlignment": "bottom"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
+    },
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.codexCharacter",
+      "Icon": "images/icon",
+      "Name": "Codex 캐릭터",
+      "Tooltip": "Codex 남은 사용량에 반응하는 TV 캐릭터 애니메이션",
+      "States": [
+        {
+          "Image": "images/defaultImage",
+          "TitleAlignment": "bottom"
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
+    }
+  ],
+  "SDKVersion": 2,
+  "CodePath": "plugin/index.html",
+  "Name": "AI Usage",
+  "Icon": "images/cate",
+  "Category": "AI Usage",
+  "CategoryIcon": "images/cate",
+  "Description": "Claude / Codex / Gemini 남은 사용량을 실시간 게이지로 표시.",
+  "Author": "taehyeong",
+  "Version": "0.2.0",
+  "OS": [
+    {
+      "Platform": "mac",
+      "MinimumVersion": "10.15"
+    }
+  ],
+  "Software": {
+    "MinimumVersion": "6.4"
+  }
+}
