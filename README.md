@@ -5,6 +5,8 @@ Show your remaining **Claude / Codex / Gemini** usage as live gauges on a
 
 스트림덱 계열 장치에 AI 사용량(Claude / Codex / Gemini)을 실시간 게이지로 띄웁니다.
 
+![MONSTAR DECK running AI usage gauges](docs/deck-demo.gif)
+
 ## Actions (Category: AI Usage)
 
 12 actions, one metric per key — full-size ring + remaining % + label + reset time:
