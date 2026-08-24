@@ -87,3 +87,45 @@ def test_codex_unavailable_not_corrected():
     t = {"codex": {"available": False, "reset_7d_at": 1}}
     p = build_payload(t, 2)
     assert p["codex_7d"]["rem"] is None
+
+
+# agy statusline tee 경로의 실제 페이로드 형태 (2026-08-24 실측)
+GEM = {"gemini": {"available": True,
+                  "pct_used": 20, "reset": "08/24 14:51 KST",
+                  "pct_5h": 20, "reset_5h": "08/24 14:51 KST",
+                  "reset_5h_at": 1787550681,
+                  "pct_weekly": 12, "reset_weekly": "08/26 23:00 KST",
+                  "reset_weekly_at": 1787752820}}
+
+
+def test_gemini_two_windows():
+    p = build_payload(GEM, 1787540000)  # 두 리셋 모두 미래
+    assert p["gemini_5h"]["rem"] == 80 and p["gemini_5h"]["reset"] == "08/24 14:51"
+    assert p["gemini_7d"]["rem"] == 88 and p["gemini_7d"]["reset"] == "08/26 23:00"
+
+
+def test_gemini_5h_expired_corrects_to_100():
+    # agy 원장은 agy가 돌 때만 갱신 → 리셋 지났으면 새 창(사용 0)
+    p = build_payload(GEM, 1787571768)  # 5h 지남, 주간은 미래
+    assert p["gemini_5h"]["rem"] == 100 and p["gemini_5h"]["reset"] == ""
+    assert p["gemini_7d"]["rem"] == 88  # 주간은 무보정
+
+
+def test_gemini_legacy_key_stays_5h():
+    # 구 플러그인 + 신 writer 스큐 방어
+    p = build_payload(GEM, 1787540000)
+    assert p["gemini"]["rem"] == 80 and p["gemini"]["reset"] == "08/24 14:51"
+
+
+def test_gemini_weekly_null_pct():
+    t = {"gemini": dict(GEM["gemini"], pct_weekly=None, reset_weekly_at=None)}
+    p = build_payload(t, 1787540000)
+    assert p["gemini_7d"]["rem"] is None
+    assert p["gemini_7d"]["available"] is True  # 플러그인이 "—" 렌더
+
+
+def test_gemini_legacy_only_source_has_no_axes():
+    # agy 폴백(gemini-cli quota API)엔 pct_5h/pct_weekly가 없다
+    p = build_payload(TOKEN, 0)
+    assert p["gemini_5h"]["rem"] is None and p["gemini_7d"]["rem"] is None
+    assert p["gemini"]["rem"] == 100  # legacy 경로는 그대로 산다
