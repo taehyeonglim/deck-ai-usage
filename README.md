@@ -9,13 +9,13 @@ Show your remaining **Claude / Codex / Gemini** usage as live gauges on a
 
 ## Actions (Category: AI Usage)
 
-12 actions, one metric per key — full-size ring + remaining % + label + reset time:
+14 actions, one metric per key — full-size ring + remaining % + label + reset time:
 
 | Gauge | Reset time | Character |
 |---|---|---|
 | Claude 5h / Claude Weekly | Claude 5h Reset / Weekly Reset | Claude character (usage-reactive animation) |
 | Codex 5h / Codex Weekly | Codex 5h Reset / Weekly Reset | Codex TV character |
-| Gemini | Gemini Reset | |
+| Gemini 5h / Gemini Weekly | Gemini 5h Reset / Weekly Reset | |
 
 Ring color reflects remaining %: green > 50, orange ≥ 20, red < 20.
 Providers are distinguished by label and accent color.

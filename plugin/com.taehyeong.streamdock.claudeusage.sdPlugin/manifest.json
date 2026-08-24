@@ -47,8 +47,19 @@
     {
       "UUID": "com.taehyeong.streamdock.claudeusage.gemini",
       "Icon": "images/icon",
-      "Name": "Gemini",
-      "Tooltip": "Gemini 남은 사용량",
+      "Name": "Gemini 5h",
+      "Tooltip": "Gemini 5h 남은 사용량",
+      "States": [{ "Image": "images/defaultImage", "TitleAlignment": "bottom" }],
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
+    },
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.geminiWeekly",
+      "Icon": "images/icon",
+      "Name": "Gemini 주간",
+      "Tooltip": "Gemini 주간 남은 사용량",
       "States": [{ "Image": "images/defaultImage", "TitleAlignment": "bottom" }],
       "Controllers": ["Keypad"],
       "UserTitleEnabled": false,
@@ -102,8 +113,19 @@
     {
       "UUID": "com.taehyeong.streamdock.claudeusage.geminiReset",
       "Icon": "images/icon",
-      "Name": "Gemini 리셋",
-      "Tooltip": "Gemini 리셋 시각",
+      "Name": "Gemini 5h 리셋",
+      "Tooltip": "Gemini 5h 리셋 시각",
+      "States": [{ "Image": "images/defaultImage", "TitleAlignment": "bottom" }],
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "PropertyInspectorPath": "propertyInspector/index.html"
+    },
+    {
+      "UUID": "com.taehyeong.streamdock.claudeusage.geminiWeeklyReset",
+      "Icon": "images/icon",
+      "Name": "Gemini 주간 리셋",
+      "Tooltip": "Gemini 주간 리셋 시각",
       "States": [{ "Image": "images/defaultImage", "TitleAlignment": "bottom" }],
       "Controllers": ["Keypad"],
       "UserTitleEnabled": false,

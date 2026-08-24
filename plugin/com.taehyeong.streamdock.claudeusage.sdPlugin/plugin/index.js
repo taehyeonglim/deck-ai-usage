@@ -8,12 +8,14 @@ const METRICS = {
   "com.taehyeong.streamdock.claudeusage.claude7d": { key: "claude_7d", label: "Claude 주간", accent: "#D77757", mode: "gauge" },
   "com.taehyeong.streamdock.claudeusage.codex5h":  { key: "codex_5h",  label: "Codex 5h",  accent: "#10A37F", mode: "gauge" },
   "com.taehyeong.streamdock.claudeusage.codex7d":  { key: "codex_7d",  label: "Codex 주간", accent: "#10A37F", mode: "gauge" },
-  "com.taehyeong.streamdock.claudeusage.gemini":   { key: "gemini",    label: "Gemini",    accent: "#4285F4", mode: "gauge" },
+  "com.taehyeong.streamdock.claudeusage.gemini":        { key: "gemini_5h", fallbackKey: "gemini", label: "Gemini 5h", accent: "#4285F4", mode: "gauge" },
+  "com.taehyeong.streamdock.claudeusage.geminiWeekly":  { key: "gemini_7d", label: "Gemini 주간", accent: "#4285F4", mode: "gauge" },
   "com.taehyeong.streamdock.claudeusage.claude5hReset": { key: "claude_5h", label: "Claude 5h", accent: "#D77757", mode: "reset" },
   "com.taehyeong.streamdock.claudeusage.claude7dReset": { key: "claude_7d", label: "Claude 주간", accent: "#D77757", mode: "reset" },
   "com.taehyeong.streamdock.claudeusage.codex5hReset":  { key: "codex_5h",  label: "Codex 5h",  accent: "#10A37F", mode: "reset" },
   "com.taehyeong.streamdock.claudeusage.codex7dReset":  { key: "codex_7d",  label: "Codex 주간", accent: "#10A37F", mode: "reset" },
-  "com.taehyeong.streamdock.claudeusage.geminiReset":   { key: "gemini",    label: "Gemini",    accent: "#4285F4", mode: "reset" },
+  "com.taehyeong.streamdock.claudeusage.geminiReset":       { key: "gemini_5h", fallbackKey: "gemini", label: "Gemini 5h", accent: "#4285F4", mode: "reset" },
+  "com.taehyeong.streamdock.claudeusage.geminiWeeklyReset": { key: "gemini_7d", label: "Gemini 주간", accent: "#4285F4", mode: "reset" },
   "com.taehyeong.streamdock.claudeusage.character":      { label: "Claude", provider: "claude", mode: "anim" },
   "com.taehyeong.streamdock.claudeusage.codexCharacter": { label: "Codex",  provider: "codex",  mode: "anim" },
 };
@@ -45,7 +47,7 @@ async function fetchUsage() {
 // 단일 지표 게이지 (풀사이즈 링 + 중앙 % + 라벨 + 리셋 + 프로바이더 액센트)
 function drawSingleGauge(ctx, metric, u, nowMs) {
   const W = 144, cx = 72, cy = 74, r = 44;
-  const data = u ? u[metric.key] : null;
+  const data = CU.pickMetric(u, metric);
   const fileTs = u ? u.ts : 0;
   const avail = !!(data && data.available !== false && data.rem != null);
   const rem = avail ? data.rem : null;
@@ -90,7 +92,7 @@ function drawSingleGauge(ctx, metric, u, nowMs) {
 // 리셋 시각 전용 (링 없이 ↺ + 날짜/시각)
 function drawReset(ctx, metric, u, nowMs) {
   const W = 144;
-  const data = u ? u[metric.key] : null;
+  const data = CU.pickMetric(u, metric);
   const fileTs = u ? u.ts : 0;
   const avail = !!(data && data.available !== false);
   const reset = data && data.reset ? String(data.reset) : "";
