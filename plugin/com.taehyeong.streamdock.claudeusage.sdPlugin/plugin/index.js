@@ -20,6 +20,16 @@ const METRICS = {
   "com.taehyeong.streamdock.claudeusage.codexCharacter": { label: "Codex",  provider: "codex",  mode: "anim" },
 };
 
+// Elgato 는 액션 UUID 를 소문자로 바꿔서 willAppear 로 보낸다 (Stream Dock 은 매니페스트
+// 표기 그대로). 대소문자 무시하고 찾아야 …Reset·codexCharacter 같은 액션이 양쪽에서 동작한다.
+const METRICS_BY_ID = new Map(
+  Object.entries(METRICS).map(([id, metric]) => [id.toLowerCase(), metric])
+);
+
+function metricFor(action) {
+  return METRICS_BY_ID.get(String(action).toLowerCase());
+}
+
 // 덱이 이 함수를 호출한다 (Elgato SDK 진입점)
 function connectElgatoStreamDeckSocket(port, uuid, registerEvent, info) {
   ws = new WebSocket("ws://127.0.0.1:" + port);
@@ -27,7 +37,7 @@ function connectElgatoStreamDeckSocket(port, uuid, registerEvent, info) {
   ws.onmessage = (e) => {
     const d = JSON.parse(e.data);
     if (d.event === "willAppear") {
-      const metric = METRICS[d.action];
+      const metric = metricFor(d.action);
       if (metric) { contexts.set(d.context, metric); updateAnimTimer(); renderAll(); }
     } else if (d.event === "willDisappear") {
       contexts.delete(d.context); updateAnimTimer();

@@ -34,9 +34,17 @@ Then place any action (e.g. "Claude 5h") on a key in the Stream Dock app.
 
 The plugin code follows Elgato's plugin protocol (`connectElgatoStreamDeckSocket`,
 `willAppear` / `setImage`), and `manifest.elgato.json` provides the SDKVersion 2
-manifest Elgato requires. **Not yet verified on real Elgato hardware** — if the
-gauges stay blank, the likely culprit is `fetch()` of the local `usage.json`
-being blocked in Elgato's embedded browser. Bug reports welcome.
+manifest Elgato requires.
+
+**Verified on real Elgato hardware** — Stream Deck 316, app 7.4.2, Windows 11.
+`fetch()` of the local `usage.json` is *not* blocked, so the gauges render. Two
+Elgato-specific details are worth knowing if you hack on this:
+
+- Elgato lowercases action UUIDs before they reach `willAppear`, so the plugin
+  matches them case-insensitively. Ids that carry uppercase (`…claude7dReset`)
+  would otherwise never resolve and their keys render blank.
+- The install scripts skip `plugin/data/` so a reinstall keeps whatever your
+  writer has already produced.
 
 ## Data feed
 
